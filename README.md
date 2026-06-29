@@ -70,6 +70,8 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 On first launch the server scans `data/manga/` and writes a catalog to `.cache/library.json`.
 
+**After cloning**, copy your own `.cbz` files into `data/manga/<series-slug>/` — archives are gitignored and are not pushed to GitHub.
+
 ---
 
 ## Adding manga
@@ -100,7 +102,11 @@ Delicious in Dungeon - c001 (v01) - p002-p003 [Yen Press] [Digital] [1r0n].jpg
 
 After adding or removing files, click **Rescan library** in the app header (or restart the server).
 
-### Optional `series.json`
+### Media and git
+
+CBZ/CBR/PDF files are listed in `.gitignore` and should stay on your machine (or NAS/cloud folder). Only lightweight files like `series.json` belong in the repository. This keeps clones fast and avoids GitHub’s file size limits.
+
+---
 
 Each series folder may include a `series.json` for display metadata. Values here override auto-detected defaults during a library scan.
 
