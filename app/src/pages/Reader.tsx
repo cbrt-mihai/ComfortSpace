@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { getVolume, saveProgress } from "../api";
 import type { VolumeDetail } from "../types";
 import { Layout } from "../components/Layout";
-import { PageViewer, type FitMode } from "../components/PageViewer";
+import { PageViewer } from "../components/PageViewer";
 
 function getCurrentChapter(volume: VolumeDetail, page: number) {
   return volume.chapters.find(
@@ -19,7 +19,6 @@ export function ReaderPage() {
   const [searchParams] = useSearchParams();
   const [volumeData, setVolumeData] = useState<VolumeDetail | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [fitMode, setFitMode] = useState<FitMode>("height");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -110,9 +109,7 @@ export function ReaderPage() {
         currentPage={currentPage}
         totalPages={volumeData.totalPages}
         chapters={volumeData.chapters}
-        fitMode={fitMode}
         onPageChange={handlePageChange}
-        onFitModeChange={setFitMode}
       />
     </Layout>
   );
