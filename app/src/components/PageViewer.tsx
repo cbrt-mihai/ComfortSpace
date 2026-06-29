@@ -3,15 +3,12 @@ import type { Chapter } from "../types";
 import {
   loadReaderPreferences,
   nextDoublePage,
-  nextGridPage,
   prevDoublePage,
-  prevGridPage,
   saveReaderPreferences,
   type FitMode,
   type ReaderPreferences,
 } from "../readerPreferences";
 import { DoublePageLayout } from "./reader/DoublePageLayout";
-import { GridLayout } from "./reader/GridLayout";
 import { ReaderToolbar } from "./reader/ReaderToolbar";
 import { SinglePageLayout } from "./reader/SinglePageLayout";
 import { StripLayout } from "./reader/StripLayout";
@@ -47,26 +44,22 @@ export function PageViewer({
   }, []);
 
   const goPrev = useCallback(() => {
-    const { layoutMode, readingDirection, gridColumns, gridRows } = preferences;
+    const { layoutMode, readingDirection } = preferences;
     if (currentPage <= 1) return;
 
     if (layoutMode === "double") {
       onPageChange(prevDoublePage(currentPage, readingDirection));
-    } else if (layoutMode === "grid") {
-      onPageChange(prevGridPage(currentPage, totalPages, gridColumns, gridRows));
     } else {
       onPageChange(currentPage - 1);
     }
-  }, [preferences, currentPage, totalPages, onPageChange]);
+  }, [preferences, currentPage, onPageChange]);
 
   const goNext = useCallback(() => {
-    const { layoutMode, readingDirection, gridColumns, gridRows } = preferences;
+    const { layoutMode, readingDirection } = preferences;
     if (currentPage >= totalPages) return;
 
     if (layoutMode === "double") {
       onPageChange(nextDoublePage(currentPage, totalPages, readingDirection));
-    } else if (layoutMode === "grid") {
-      onPageChange(nextGridPage(currentPage, totalPages, gridColumns, gridRows));
     } else {
       onPageChange(currentPage + 1);
     }
@@ -94,6 +87,7 @@ export function PageViewer({
     currentPage,
     totalPages,
     fitMode: preferences.fitMode,
+    zoom: preferences.zoom,
     onPageChange,
   };
 
@@ -113,16 +107,7 @@ export function PageViewer({
       {preferences.layoutMode === "double" && (
         <DoublePageLayout {...layoutProps} readingDirection={preferences.readingDirection} />
       )}
-      {preferences.layoutMode === "strip" && (
-        <StripLayout {...layoutProps} stripZoom={preferences.stripZoom} />
-      )}
-      {preferences.layoutMode === "grid" && (
-        <GridLayout
-          {...layoutProps}
-          gridColumns={preferences.gridColumns}
-          gridRows={preferences.gridRows}
-        />
-      )}
+      {preferences.layoutMode === "strip" && <StripLayout {...layoutProps} />}
     </div>
   );
 }

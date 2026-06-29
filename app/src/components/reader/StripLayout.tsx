@@ -6,7 +6,7 @@ interface StripLayoutProps {
   volume: number;
   currentPage: number;
   totalPages: number;
-  stripZoom: number;
+  zoom: number;
   onPageChange: (page: number) => void;
 }
 
@@ -15,7 +15,7 @@ export function StripLayout({
   volume,
   currentPage,
   totalPages,
-  stripZoom,
+  zoom,
   onPageChange,
 }: StripLayoutProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -76,7 +76,7 @@ export function StripLayout({
   return (
     <div
       ref={containerRef}
-      className={`flex-1 overflow-y-auto ${stripZoom > 100 ? "overflow-x-auto" : "overflow-x-hidden"}`}
+      className={`flex-1 overflow-y-auto ${zoom > 100 ? "overflow-x-auto" : "overflow-x-hidden"}`}
     >
       <div className="flex flex-col items-center gap-0 py-2">
         {pages.map((page) => (
@@ -89,7 +89,7 @@ export function StripLayout({
             data-page={page}
             className="w-full flex justify-center min-h-[20vh]"
           >
-            <div className="shrink-0" style={{ width: `${stripZoom}%` }}>
+            <div className="shrink-0" style={{ width: `${zoom}%` }}>
               <PageImage
                 slug={slug}
                 volume={volume}

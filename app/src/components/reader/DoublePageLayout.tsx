@@ -14,6 +14,7 @@ interface DoublePageLayoutProps {
   currentPage: number;
   totalPages: number;
   fitMode: FitMode;
+  zoom: number;
   readingDirection: ReadingDirection;
   onPageChange: (page: number) => void;
 }
@@ -24,6 +25,7 @@ export function DoublePageLayout({
   currentPage,
   totalPages,
   fitMode,
+  zoom,
   readingDirection,
   onPageChange,
 }: DoublePageLayoutProps) {
@@ -42,13 +44,21 @@ export function DoublePageLayout({
 
   const loading = loadedCount < pages.length;
 
+  const spreadStyle =
+    fitMode === "height" ? { height: `${zoom}%` } : { width: `${zoom}%` };
+
   return (
-    <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+    <div
+      className={`flex-1 relative flex items-center justify-center ${
+        zoom > 100 ? "overflow-auto" : "overflow-hidden"
+      }`}
+    >
       {loading && <LoadingSpinner />}
       <div
-        className={`relative z-[1] flex items-center justify-center gap-1 max-w-full max-h-full px-2 ${
+        className={`relative z-[1] flex items-center justify-center gap-1 shrink-0 px-2 ${
           fitMode === "width" ? "w-full" : "h-full"
         }`}
+        style={spreadStyle}
       >
         {displayPages.map((page) => (
           <PageImage
@@ -61,10 +71,10 @@ export function DoublePageLayout({
             onLoad={() => setLoadedCount((n) => n + 1)}
             className={
               pages.length === 1
-                ? "max-w-full max-h-full"
+                ? "max-w-none max-h-none w-full h-full"
                 : fitMode === "width"
-                  ? "w-1/2 h-auto"
-                  : "h-full w-auto max-w-[50%]"
+                  ? "w-1/2 h-auto max-w-none"
+                  : "h-full w-auto max-w-[50%] max-h-none"
             }
           />
         ))}

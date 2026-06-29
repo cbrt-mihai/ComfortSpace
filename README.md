@@ -10,7 +10,7 @@ ComfortSpace is the first piece of a broader personal media platform. Books and 
 
 - **Library browser** — grid of series with cover thumbnails, author, and volume count
 - **Volume list** — per-series view with chapter counts, progress bars, and resume links
-- **Manga reader** — customizable layouts (single page, double page, long strip, grid), fit-to-width/height, reading direction, and fullscreen
+- **Manga reader** — customizable layouts (single page, double page, long strip), zoom, fit-to-width/height, reading direction, and fullscreen
 - **Reading progress** — automatically saved locally and restored when you reopen a volume
 - **CBZ-native** — pages streamed directly from archives; no extraction to disk required
 - **Zero database** — catalog and progress stored in a single JSON cache file
@@ -24,11 +24,10 @@ ComfortSpace is the first piece of a broader personal media platform. Books and 
 | Previous page | `←` or click the left half of the page |
 | Fullscreen | `f` |
 | Jump to chapter | Chapter dropdown in the reader toolbar |
-| Layout mode | Layout dropdown — single page, double page, long strip, or grid |
-| Fit mode | Fit height / Fit width (single, double, and grid layouts) |
+| Layout mode | Layout dropdown — single page, double page, or long strip |
+| Fit mode | Fit height / Fit width (single and double page layouts) |
 | Reading direction | Right-to-left / Left-to-right (double page layout) |
-| Grid size | Columns and rows selectors (grid layout) |
-| Strip zoom | Slider, ± buttons, or editable percentage field (long strip layout, 25%–200%) |
+| Zoom | Slider, ± buttons, or editable percentage field (all layouts, 25%–200%) |
 
 Layout and display preferences are saved in your browser and apply across all volumes.
 

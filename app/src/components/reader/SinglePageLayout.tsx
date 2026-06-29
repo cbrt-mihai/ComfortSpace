@@ -8,6 +8,7 @@ interface SinglePageLayoutProps {
   currentPage: number;
   totalPages: number;
   fitMode: FitMode;
+  zoom: number;
   onPageChange: (page: number) => void;
 }
 
@@ -17,6 +18,7 @@ export function SinglePageLayout({
   currentPage,
   totalPages,
   fitMode,
+  zoom,
   onPageChange,
 }: SinglePageLayoutProps) {
   const [loading, setLoading] = useState(true);
@@ -32,18 +34,27 @@ export function SinglePageLayout({
     if (currentPage < totalPages) onPageChange(currentPage + 1);
   };
 
+  const zoomStyle =
+    fitMode === "height" ? { height: `${zoom}%` } : { width: `${zoom}%` };
+
   return (
-    <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+    <div
+      className={`flex-1 relative flex items-center justify-center ${
+        zoom > 100 ? "overflow-auto" : "overflow-hidden"
+      }`}
+    >
       {loading && <LoadingSpinner />}
-      <PageImage
-        slug={slug}
-        volume={volume}
-        page={currentPage}
-        fitMode={fitMode}
-        eager
-        onLoad={() => setLoading(false)}
-        className="max-w-full max-h-full relative z-[1]"
-      />
+      <div className="relative z-[1] shrink-0" style={zoomStyle}>
+        <PageImage
+          slug={slug}
+          volume={volume}
+          page={currentPage}
+          fitMode={fitMode}
+          eager
+          onLoad={() => setLoading(false)}
+          className="w-full h-full max-w-none max-h-none"
+        />
+      </div>
       <NavOverlay
         onPrev={goPrev}
         onNext={goNext}
