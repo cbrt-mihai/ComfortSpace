@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #0f0f12;
+  --color-surface-raised: #1a1a22;
+  --color-surface-hover: #242430;
+  --color-border: #2e2e3a;
+  --color-accent: #7c6af7;
+  --color-accent-hover: #9585ff;
+  --color-text: #e8e8ed;
+  --color-text-muted: #9898a8;
+}
+
+body {
+  @apply bg-surface text-text antialiased;
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
