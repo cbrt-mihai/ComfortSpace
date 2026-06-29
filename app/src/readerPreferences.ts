@@ -15,7 +15,6 @@ const STORAGE_KEY = "comfortspace-reader-prefs";
 
 export const STRIP_ZOOM_MIN = 25;
 export const STRIP_ZOOM_MAX = 200;
-export const STRIP_ZOOM_STEP = 25;
 
 const DEFAULTS: ReaderPreferences = {
   layoutMode: "single",

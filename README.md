@@ -28,7 +28,7 @@ ComfortSpace is the first piece of a broader personal media platform. Books and 
 | Fit mode | Fit height / Fit width (single, double, and grid layouts) |
 | Reading direction | Right-to-left / Left-to-right (double page layout) |
 | Grid size | Columns and rows selectors (grid layout) |
-| Strip zoom | Slider or ± buttons in the toolbar (long strip layout, 25%–200%) |
+| Strip zoom | Slider, ± buttons, or editable percentage field (long strip layout, 25%–200%) |
 
 Layout and display preferences are saved in your browser and apply across all volumes.
 
