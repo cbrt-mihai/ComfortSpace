@@ -1,4 +1,12 @@
-import type { Library, ProgressEntry, Series, VolumeDetail } from "./types";
+import type {
+  Library,
+  ProgressEntry,
+  RatingEntry,
+  ReadEntry,
+  Series,
+  SeriesMetadata,
+  VolumeDetail,
+} from "./types";
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
@@ -40,4 +48,49 @@ export function saveProgress(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ seriesId, volume, page, chapter }),
   });
+}
+
+export function setReadStatus(
+  seriesId: string,
+  read: boolean,
+  volume?: number,
+  chapter?: number
+): Promise<ReadEntry> {
+  return fetchJson<ReadEntry>("/api/read-status", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ seriesId, volume, chapter, read }),
+  });
+}
+
+export function setRating(
+  seriesId: string,
+  score: number | null,
+  volume?: number,
+  chapter?: number,
+  cascade = false
+): Promise<RatingEntry | null> {
+  return fetchJson<RatingEntry | null>("/api/ratings", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ seriesId, volume, chapter, score, cascade }),
+  });
+}
+
+export function getSeriesMetadata(slug: string): Promise<SeriesMetadata> {
+  return fetchJson<SeriesMetadata>(`/api/series/${slug}/metadata`);
+}
+
+export function saveSeriesMetadata(
+  slug: string,
+  metadata: SeriesMetadata
+): Promise<{ metadata: SeriesMetadata; series: Series | null }> {
+  return fetchJson<{ metadata: SeriesMetadata; series: Series | null }>(
+    `/api/series/${slug}/metadata`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(metadata),
+    }
+  );
 }

@@ -6,9 +6,14 @@ import {
   type ReaderPreferences,
   type ReadingDirection,
 } from "../../readerPreferences";
+import { RatingControl } from "../RatingControl";
+import { ReadToggle } from "../ReadToggle";
+import { PageJumpControl } from "./PageJumpControl";
 import { ZoomControl } from "./ZoomControl";
 
 interface ReaderToolbarProps {
+  seriesId: string;
+  volume: number;
   currentPage: number;
   totalPages: number;
   currentChapter?: Chapter;
@@ -16,9 +21,12 @@ interface ReaderToolbarProps {
   preferences: ReaderPreferences;
   onChapterJump: (page: number) => void;
   onPreferencesChange: (partial: Partial<ReaderPreferences>) => void;
+  onUserDataChange?: () => void;
 }
 
 export function ReaderToolbar({
+  seriesId,
+  volume,
   currentPage,
   totalPages,
   currentChapter,
@@ -26,18 +34,38 @@ export function ReaderToolbar({
   preferences,
   onChapterJump,
   onPreferencesChange,
+  onUserDataChange,
 }: ReaderToolbarProps) {
   const { layoutMode, fitMode, readingDirection, zoom } = preferences;
 
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-2 bg-surface-raised border-b border-border text-sm shrink-0 flex-wrap">
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-3 min-w-0 flex-wrap">
         {currentChapter && (
           <span className="text-text-muted truncate">{currentChapter.title}</span>
         )}
-        <span className="text-text font-medium shrink-0">
-          {currentPage} / {totalPages}
-        </span>
+        <PageJumpControl
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onChapterJump}
+        />
+        <ReadToggle
+          seriesId={seriesId}
+          volume={volume}
+          chapter={currentChapter?.number}
+          readStatus={currentChapter?.readStatus}
+          stats={currentChapter?.stats}
+          compact
+          onChange={() => onUserDataChange?.()}
+        />
+        <RatingControl
+          seriesId={seriesId}
+          volume={volume}
+          chapter={currentChapter?.number}
+          value={currentChapter?.rating}
+          compact
+          onChange={() => onUserDataChange?.()}
+        />
       </div>
 
       <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">

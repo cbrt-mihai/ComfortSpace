@@ -2,14 +2,18 @@ import cors from "cors";
 import express from "express";
 import path from "node:path";
 import { cbzExists, getCbzPage } from "./cbz.js";
+import { readSeriesMetadataFile, writeSeriesMetadata } from "./metadata.js";
 import { DATA_DIR, ROOT_DIR } from "./paths.js";
 import { getVolumeProgress, saveProgress } from "./progress.js";
+import { enrichSeries, enrichVolume } from "./stats.js";
 import {
   findSeries,
   findVolume,
   loadLibrary,
+  rescanSeries,
   scanLibrary,
 } from "./scanner.js";
+import { setRating, setReadStatus } from "./userData.js";
 
 const app = express();
 const PORT = 3001;
@@ -19,12 +23,18 @@ app.use(express.json());
 
 app.get("/api/library", async (_req, res) => {
   const library = await loadLibrary();
-  res.json(library);
+  res.json({
+    ...library,
+    series: library.series.map((s) => enrichSeries(library, s)),
+  });
 });
 
 app.post("/api/library/rescan", async (_req, res) => {
   const library = await scanLibrary();
-  res.json(library);
+  res.json({
+    ...library,
+    series: library.series.map((s) => enrichSeries(library, s)),
+  });
 });
 
 app.get("/api/series/:slug", async (req, res) => {
@@ -35,12 +45,42 @@ app.get("/api/series/:slug", async (req, res) => {
     return;
   }
 
-  const volumesWithProgress = series.volumes.map((vol) => ({
-    ...vol,
-    progress: getVolumeProgress(library, series.id, vol.number),
-  }));
+  res.json(enrichSeries(library, series));
+});
 
-  res.json({ ...series, volumes: volumesWithProgress });
+app.get("/api/series/:slug/metadata", async (req, res) => {
+  const library = await loadLibrary();
+  const series = findSeries(library, req.params.slug);
+  if (!series) {
+    res.status(404).json({ error: "Series not found" });
+    return;
+  }
+  const metadata = await readSeriesMetadataFile(req.params.slug);
+  res.json(metadata);
+});
+
+app.put("/api/series/:slug/metadata", async (req, res) => {
+  const library = await loadLibrary();
+  const series = findSeries(library, req.params.slug);
+  if (!series) {
+    res.status(404).json({ error: "Series not found" });
+    return;
+  }
+
+  try {
+    const metadata = await writeSeriesMetadata(req.params.slug, req.body);
+    await rescanSeries(req.params.slug);
+    const updated = await loadLibrary();
+    const refreshed = findSeries(updated, req.params.slug);
+    res.json({
+      metadata,
+      series: refreshed ? enrichSeries(updated, refreshed) : null,
+    });
+  } catch (err) {
+    res.status(400).json({
+      error: err instanceof Error ? err.message : "Invalid metadata",
+    });
+  }
 });
 
 app.get("/api/series/:slug/volumes/:num", async (req, res) => {
@@ -59,9 +99,8 @@ app.get("/api/series/:slug/volumes/:num", async (req, res) => {
   }
 
   res.json({
-    ...volume,
+    ...enrichVolume(library, series.id, volume),
     series: { id: series.id, title: series.title, slug: series.slug },
-    progress: getVolumeProgress(library, series.id, volumeNum),
   });
 });
 
@@ -117,6 +156,54 @@ app.patch("/api/progress", async (req, res) => {
   }
 
   const entry = await saveProgress(seriesId, volume, page, chapter);
+  res.json(entry);
+});
+
+app.patch("/api/read-status", async (req, res) => {
+  const { seriesId, volume, chapter, read } = req.body as {
+    seriesId?: string;
+    volume?: number;
+    chapter?: number;
+    read?: boolean;
+  };
+
+  if (!seriesId || read === undefined) {
+    res.status(400).json({ error: "seriesId and read are required" });
+    return;
+  }
+
+  const entry = await setReadStatus(seriesId, read, volume, chapter);
+  res.json(entry);
+});
+
+app.patch("/api/ratings", async (req, res) => {
+  const { seriesId, volume, chapter, score, cascade } = req.body as {
+    seriesId?: string;
+    volume?: number;
+    chapter?: number;
+    score?: number | null;
+    cascade?: boolean;
+  };
+
+  if (!seriesId) {
+    res.status(400).json({ error: "seriesId is required" });
+    return;
+  }
+
+  if (score !== null && score !== undefined) {
+    if (typeof score !== "number" || score < 1 || score > 10) {
+      res.status(400).json({ error: "score must be between 1 and 10, or null" });
+      return;
+    }
+  }
+
+  const entry = await setRating(
+    seriesId,
+    score === undefined ? null : score,
+    volume,
+    chapter,
+    cascade === true
+  );
   res.json(entry);
 });
 

@@ -10,13 +10,6 @@ import type {
   Volume,
 } from "./types.js";
 
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
 function titleFromSlug(slug: string): string {
   return slug
     .split("-")
@@ -60,6 +53,23 @@ function buildChapters(pages: { index: number; chapter: number }[]): Chapter[] {
   return chapters;
 }
 
+function applyChapterOverrides(
+  chapters: Chapter[],
+  volNum: number,
+  metadata: SeriesMetadata | null
+): Chapter[] {
+  const overrides = metadata?.chapterOverrides?.[String(volNum)];
+  if (!overrides) return chapters;
+
+  return chapters.map((ch) => {
+    const override = overrides[String(ch.number)];
+    if (override?.title) {
+      return { ...ch, title: override.title };
+    }
+    return ch;
+  });
+}
+
 async function readSeriesMetadata(
   seriesDir: string
 ): Promise<SeriesMetadata | null> {
@@ -96,7 +106,7 @@ async function scanSeries(seriesDir: string): Promise<Series | null> {
     volumes.push({
       number: volNum,
       filename,
-      chapters: buildChapters(pages),
+      chapters: applyChapterOverrides(buildChapters(pages), volNum, metadata),
       totalPages: pages.length,
     });
   }
@@ -115,19 +125,40 @@ async function scanSeries(seriesDir: string): Promise<Series | null> {
     description: metadata?.description,
     yearStart: metadata?.yearStart,
     yearEnd: metadata?.yearEnd,
+    genres: metadata?.genres,
+    tags: metadata?.tags,
+    status: metadata?.status,
+    altTitles: metadata?.altTitles,
+    publisher: metadata?.publisher,
+    language: metadata?.language,
     coverPage: `/api/series/${slug}/volumes/1/pages/1`,
     volumes,
   };
 }
 
-async function loadExistingProgress(): Promise<Library["progress"]> {
+async function loadExistingUserData(): Promise<
+  Pick<Library, "progress" | "readStatus" | "ratings">
+> {
   try {
     const raw = await fs.readFile(LIBRARY_PATH, "utf-8");
     const lib = JSON.parse(raw) as Library;
-    return lib.progress ?? {};
+    return {
+      progress: lib.progress ?? {},
+      readStatus: lib.readStatus ?? {},
+      ratings: lib.ratings ?? {},
+    };
   } catch {
-    return {};
+    return { progress: {}, readStatus: {}, ratings: {} };
   }
+}
+
+export function normalizeLibrary(raw: Library): Library {
+  return {
+    ...raw,
+    progress: raw.progress ?? {},
+    readStatus: raw.readStatus ?? {},
+    ratings: raw.ratings ?? {},
+  };
 }
 
 export async function scanLibrary(): Promise<Library> {
@@ -147,20 +178,42 @@ export async function scanLibrary(): Promise<Library> {
 
   series.sort((a, b) => a.title.localeCompare(b.title));
 
+  const userData = await loadExistingUserData();
+
   const library: Library = {
     scannedAt: new Date().toISOString(),
     series,
-    progress: await loadExistingProgress(),
+    progress: userData.progress,
+    readStatus: userData.readStatus,
+    ratings: userData.ratings,
   };
 
   await fs.writeFile(LIBRARY_PATH, JSON.stringify(library, null, 2));
   return library;
 }
 
+export async function rescanSeries(slug: string): Promise<Series | null> {
+  const seriesDir = path.join(DATA_DIR, slug);
+  const scanned = await scanSeries(seriesDir);
+  if (!scanned) return null;
+
+  const library = await loadLibrary();
+  const idx = library.series.findIndex((s) => s.slug === slug);
+  if (idx >= 0) {
+    library.series[idx] = scanned;
+  } else {
+    library.series.push(scanned);
+  }
+  library.series.sort((a, b) => a.title.localeCompare(b.title));
+  library.scannedAt = new Date().toISOString();
+  await fs.writeFile(LIBRARY_PATH, JSON.stringify(library, null, 2));
+  return scanned;
+}
+
 export async function loadLibrary(): Promise<Library> {
   try {
     const raw = await fs.readFile(LIBRARY_PATH, "utf-8");
-    return JSON.parse(raw) as Library;
+    return normalizeLibrary(JSON.parse(raw) as Library);
   } catch {
     return scanLibrary();
   }

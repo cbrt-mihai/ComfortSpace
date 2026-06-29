@@ -1,7 +1,8 @@
 {
   "title": "Delicious in Dungeon",
   "author": "Ryoko Kui",
+  "description": "After a party member is eaten by a dragon, Laios and his companions descend into the dungeon again — this time cooking and eating the monsters they fight along the way.",
   "yearStart": 2017,
   "yearEnd": 2024,
-  "description": "After a party member is eaten by a dragon, Laios and his companions descend into the dungeon again — this time cooking and eating the monsters they fight along the way."
+  "chapterOverrides": {}
 }

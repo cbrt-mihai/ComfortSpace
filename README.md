@@ -8,12 +8,16 @@ ComfortSpace is the first piece of a broader personal media platform. Books and 
 
 ## Features
 
-- **Library browser** — grid of series with cover thumbnails, author, and volume count
-- **Volume list** — per-series view with chapter counts, progress bars, and resume links
+- **Library browser** — grid of series with cover and title; stats and ratings appear after 1s hover
+- **Volume list** — per-series grid or expandable list view with chapter-level progress, read marks, and ratings
 - **Manga reader** — customizable layouts (single page, double page, long strip), zoom, fit-to-width/height, reading direction, and fullscreen
-- **Reading progress** — automatically saved locally and restored when you reopen a volume
+- **Reading progress** — tracked at series, volume, and chapter level; automatically saved and restored
+- **Read marks** — auto-mark when finishing a volume; manual mark/unmark at any level; unmarking cascades to children (series → volumes → chapters, volume → chapters)
+- **Ratings** — 1–10 scores via 10-star picker (half steps) with numeric label; manual ratings at series/volume/chapter level plus calculated rollups
+- **Page navigation** — page counter with jump input, step buttons, and page selector (volumes ≤200 pages)
+- **Series metadata wizard** — in-app editor for `series.json` including chapter title overrides
 - **CBZ-native** — pages streamed directly from archives; no extraction to disk required
-- **Zero database** — catalog and progress stored in a single JSON cache file
+- **Zero database** — catalog, progress, read status, and ratings stored in a single JSON cache file
 - **Filesystem-driven** — drop CBZ files into a folder, rescan, and they appear in the library
 
 ### Reader controls
@@ -23,13 +27,16 @@ ComfortSpace is the first piece of a broader personal media platform. Books and 
 | Next page | `→` or click the right half of the page |
 | Previous page | `←` or click the left half of the page |
 | Fullscreen | `f` |
+| Jump to page | Page input, ± buttons, or page dropdown (≤200 pages) |
 | Jump to chapter | Chapter dropdown in the reader toolbar |
+| Mark read/unread | Read toggle in the reader toolbar |
+| Rate chapter | Star rating in the reader toolbar |
 | Layout mode | Layout dropdown — single page, double page, or long strip |
 | Fit mode | Fit height / Fit width (single and double page layouts) |
 | Reading direction | Right-to-left / Left-to-right (double page layout) |
 | Zoom | Slider, ± buttons, or editable percentage field (all layouts, 25%–200%) |
 
-Layout and display preferences are saved in your browser and apply across all volumes.
+Layout and display preferences are saved in your browser and apply across all volumes. Ratings are always shown as 10 stars with a small numeric score (e.g. `7.5`).
 
 ---
 
@@ -113,7 +120,7 @@ CBZ/CBR/PDF files are listed in `.gitignore` and should stay on your machine (or
 
 ---
 
-Each series folder may include a `series.json` for display metadata. Values here override auto-detected defaults during a library scan.
+Each series folder may include a `series.json` for display metadata. Values here override auto-detected defaults during a library scan. You can edit this file by hand or use **Edit series info** on the series page.
 
 ```json
 {
@@ -121,7 +128,18 @@ Each series folder may include a `series.json` for display metadata. Values here
   "author": "Ryoko Kui",
   "yearStart": 2017,
   "yearEnd": 2024,
-  "description": "After a party member is eaten by a dragon, Laios and his companions descend into the dungeon again — this time cooking and eating the monsters they fight along the way."
+  "description": "After a party member is eaten by a dragon...",
+  "genres": ["Fantasy", "Comedy"],
+  "tags": ["monsters", "cooking"],
+  "status": "completed",
+  "altTitles": ["Dungeon Meshi"],
+  "publisher": "Yen Press",
+  "language": "en",
+  "chapterOverrides": {
+    "1": {
+      "3": { "title": "Custom Chapter Title" }
+    }
+  }
 }
 ```
 
@@ -132,6 +150,15 @@ Each series folder may include a `series.json` for display metadata. Values here
 | `yearStart` | No | First publication year |
 | `yearEnd` | No | Last publication year |
 | `description` | No | Short series synopsis |
+| `genres` | No | Array of genre labels |
+| `tags` | No | Array of freeform tags |
+| `status` | No | `ongoing`, `completed`, or `hiatus` |
+| `altTitles` | No | Alternate series titles |
+| `publisher` | No | Publisher name |
+| `language` | No | Language code (e.g. `en`, `ja`) |
+| `chapterOverrides` | No | Per-volume, per-chapter title overrides (keys are volume/chapter numbers as strings) |
+
+User-specific data (reading progress, read marks, ratings) is **not** stored in `series.json`. It lives in `.cache/library.json`.
 
 ---
 
@@ -148,7 +175,10 @@ ComfortSpace/
 │   ├── index.ts                # Route definitions
 │   ├── scanner.ts              # Filesystem scan + catalog builder
 │   ├── cbz.ts                  # CBZ page listing and streaming
-│   └── progress.ts             # Reading progress read/write
+│   ├── progress.ts             # Reading progress read/write
+│   ├── userData.ts             # Read marks and ratings
+│   ├── stats.ts                # Progress/rating rollups
+│   └── metadata.ts             # series.json read/write
 ├── data/
 │   └── manga/                  # Your CBZ library (not committed)
 └── .cache/
@@ -167,7 +197,10 @@ Browser (localhost:5173)
 Express API (localhost:3001)
     ├── scanner  →  walks data/manga/, parses CBZ manifests
     ├── cbz      →  streams individual pages from archives (LRU cache)
-    └── progress →  reads/writes .cache/library.json
+    ├── progress →  reads/writes reading position
+    ├── userData →  read marks and ratings
+    ├── stats    →  computes rollups for API responses
+    └── metadata →  reads/writes series.json
     │
     ▼
 Local filesystem
@@ -179,45 +212,54 @@ The browser cannot read arbitrary local files, so a small Node.js server acts as
 
 ### Catalog cache (`.cache/library.json`)
 
-Generated on startup and on rescan. Reading progress is preserved across rescans.
+Generated on startup and on rescan. User data (progress, read status, ratings) is preserved across rescans.
 
 ```json
 {
   "scannedAt": "2026-06-29T12:26:32.728Z",
-  "series": [
-    {
-      "id": "delicious-in-dungeon",
-      "title": "Delicious in Dungeon",
-      "slug": "delicious-in-dungeon",
-      "path": "data/manga/delicious-in-dungeon",
-      "coverPage": "/api/series/delicious-in-dungeon/volumes/1/pages/1",
-      "volumes": [
-        {
-          "number": 1,
-          "filename": "v01.cbz",
-          "chapters": [
-            {
-              "number": 1,
-              "title": "Chapter 1",
-              "pageStart": 1,
-              "pageEnd": 40,
-              "pageCount": 40
-            }
-          ],
-          "totalPages": 192
-        }
-      ]
-    }
-  ],
+  "series": [ "..." ],
   "progress": {
     "delicious-in-dungeon/1": {
       "page": 12,
       "chapter": 1,
       "updatedAt": "2026-06-29T12:27:29.103Z"
     }
+  },
+  "readStatus": {
+    "delicious-in-dungeon/1/1": {
+      "read": true,
+      "readAt": "2026-06-29T13:00:00.000Z",
+      "updatedAt": "2026-06-29T13:00:00.000Z"
+    }
+  },
+  "ratings": {
+    "delicious-in-dungeon/1/1": {
+      "score": 8.5,
+      "updatedAt": "2026-06-29T13:05:00.000Z"
+    }
   }
 }
 ```
+
+Key patterns for `progress`, `readStatus`, and `ratings`:
+
+| Level | Key pattern | Example |
+|-------|-------------|---------|
+| Series | `{seriesId}` | `delicious-in-dungeon` |
+| Volume | `{seriesId}/{volume}` | `delicious-in-dungeon/3` |
+| Chapter | `{seriesId}/{volume}/{chapter}` | `delicious-in-dungeon/3/5` |
+
+### Rating scores (manual vs calculated)
+
+Ratings are stored as manual scores at each level. The API also returns **calculated** rollups in `stats.ratings`:
+
+| Level | Fields | Meaning |
+|-------|--------|---------|
+| Chapter | `manual` | Your rating for that chapter |
+| Volume | `manual`, `calculated` | Your volume rating; `calculated` = average of rated chapters |
+| Series | `manual`, `calculated`, `calculatedFromManualChildren` | Your series rating; `calculated` = average of volume calculated scores; `calculatedFromManualChildren` = average of manual volume ratings |
+
+On the series page all three series scores are always shown (empty stars and `—` when no score yet). Volume cards show your rating plus a calculated score from chapters.
 
 ---
 
@@ -227,12 +269,16 @@ All endpoints are served at `http://localhost:3001/api` (proxied through Vite in
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/library` | Full library catalog |
+| `GET` | `/library` | Full library catalog with per-series stats |
 | `POST` | `/library/rescan` | Re-scan `data/manga/` and rebuild catalog |
-| `GET` | `/series/:slug` | Series detail with volume list and progress |
-| `GET` | `/series/:slug/volumes/:num` | Volume detail with chapter list |
+| `GET` | `/series/:slug` | Series detail with volumes, stats, read status, ratings |
+| `GET` | `/series/:slug/metadata` | Raw `series.json` metadata |
+| `PUT` | `/series/:slug/metadata` | Write `series.json` and rescan series |
+| `GET` | `/series/:slug/volumes/:num` | Volume detail with chapters, stats, read status, ratings |
 | `GET` | `/series/:slug/volumes/:num/pages/:page` | Page image (JPEG/PNG/WebP) |
 | `PATCH` | `/progress` | Save reading progress |
+| `PATCH` | `/read-status` | Mark or unmark series/volume/chapter as read |
+| `PATCH` | `/ratings` | Set or clear rating (1–10, or `null` to remove) |
 
 ### Save progress
 
@@ -240,6 +286,22 @@ All endpoints are served at `http://localhost:3001/api` (proxied through Vite in
 curl -X PATCH http://localhost:3001/api/progress \
   -H "Content-Type: application/json" \
   -d '{"seriesId": "delicious-in-dungeon", "volume": 1, "page": 12, "chapter": 1}'
+```
+
+### Mark as read
+
+```bash
+curl -X PATCH http://localhost:3001/api/read-status \
+  -H "Content-Type: application/json" \
+  -d '{"seriesId": "delicious-in-dungeon", "volume": 1, "chapter": 3, "read": true}'
+```
+
+### Set rating
+
+```bash
+curl -X PATCH http://localhost:3001/api/ratings \
+  -H "Content-Type: application/json" \
+  -d '{"seriesId": "delicious-in-dungeon", "volume": 1, "chapter": 3, "score": 8.5}'
 ```
 
 ---
@@ -291,7 +353,7 @@ In production you will need to serve `app/dist/` separately (e.g. with a static 
 
 ComfortSpace is designed to grow into a unified local media platform:
 
-- [x] Manga — CBZ library, volume/chapter reader, progress tracking
+- [x] Manga — CBZ library, volume/chapter reader, progress tracking, read marks, ratings, metadata wizard
 - [ ] Books — EPUB/PDF support
 - [ ] Video — TV series and movies
 - [ ] OPDS catalog sharing

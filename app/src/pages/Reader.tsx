@@ -25,6 +25,16 @@ export function ReaderPage() {
 
   const volumeNum = parseInt(volumeParam ?? "1", 10);
 
+  const refreshVolumeData = useCallback(() => {
+    if (!slug) return;
+    getVolume(slug, volumeNum)
+      .then((data) => {
+        setVolumeData(data);
+        setCurrentPage((prev) => Math.min(Math.max(prev, 1), data.totalPages));
+      })
+      .catch((e) => setError(e.message));
+  }, [slug, volumeNum]);
+
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
@@ -33,9 +43,7 @@ export function ReaderPage() {
         setVolumeData(data);
         const urlPage = parseInt(searchParams.get("page") ?? "0", 10);
         const resumePage =
-          urlPage > 0
-            ? urlPage
-            : data.progress?.page ?? 1;
+          urlPage > 0 ? urlPage : data.progress?.page ?? 1;
         setCurrentPage(Math.min(Math.max(resumePage, 1), data.totalPages));
       })
       .catch((e) => setError(e.message))
@@ -48,12 +56,16 @@ export function ReaderPage() {
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
         const chapter = getCurrentChapter(volumeData, page)?.number;
-        saveProgress(volumeData.series.id, volumeData.number, page, chapter).catch(
-          console.error
-        );
+        saveProgress(volumeData.series.id, volumeData.number, page, chapter)
+          .then(() => {
+            if (page >= volumeData.totalPages) {
+              refreshVolumeData();
+            }
+          })
+          .catch(console.error);
       }, 500);
     },
-    [volumeData]
+    [volumeData, refreshVolumeData]
   );
 
   const handlePageChange = useCallback(
@@ -105,11 +117,13 @@ export function ReaderPage() {
     >
       <PageViewer
         slug={slug}
+        seriesId={volumeData.series.id}
         volume={volumeData.number}
         currentPage={currentPage}
         totalPages={volumeData.totalPages}
         chapters={volumeData.chapters}
         onPageChange={handlePageChange}
+        onUserDataChange={refreshVolumeData}
       />
     </Layout>
   );
