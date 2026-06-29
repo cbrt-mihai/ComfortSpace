@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { FitMode } from "../../readerPreferences";
 import { LoadingSpinner, NavOverlay, PageImage } from "./shared";
 
@@ -21,11 +21,8 @@ export function SinglePageLayout({
   zoom,
   onPageChange,
 }: SinglePageLayoutProps) {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-  }, [currentPage]);
+  const [readyPage, setReadyPage] = useState<number | null>(null);
+  const loading = readyPage !== currentPage;
 
   const goPrev = () => {
     if (currentPage > 1) onPageChange(currentPage - 1);
@@ -51,7 +48,7 @@ export function SinglePageLayout({
           page={currentPage}
           fitMode={fitMode}
           eager
-          onLoad={() => setLoading(false)}
+          onLoad={() => setReadyPage(currentPage)}
           className="w-full h-full max-w-none max-h-none"
         />
       </div>

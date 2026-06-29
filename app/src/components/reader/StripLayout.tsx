@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { PageImage } from "./shared";
 
 interface StripLayoutProps {
@@ -21,37 +21,32 @@ export function StripLayout({
   const containerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLElement>>(new Map());
   const scrollingToPage = useRef<number | null>(null);
+  const observerEnabled = useRef(false);
+  const currentPageRef = useRef(currentPage);
+  const onPageChangeRef = useRef(onPageChange);
+  const prevPageRef = useRef(currentPage);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+  currentPageRef.current = currentPage;
+  onPageChangeRef.current = onPageChange;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (scrollingToPage.current !== null) return;
+  useLayoutEffect(() => {
+    observerEnabled.current = false;
+    scrollingToPage.current = null;
+    const page = currentPageRef.current;
+    prevPageRef.current = page;
 
-        let best: { page: number; ratio: number } | null = null;
-        for (const entry of entries) {
-          const page = Number((entry.target as HTMLElement).dataset.page);
-          if (!page || !entry.isIntersecting) continue;
-          if (!best || entry.intersectionRatio > best.ratio) {
-            best = { page, ratio: entry.intersectionRatio };
-          }
-        }
-        if (best && best.page !== currentPage) {
-          onPageChange(best.page);
-        }
-      },
-      { root: container, threshold: [0.25, 0.5, 0.75] }
-    );
-
-    for (const el of pageRefs.current.values()) {
-      observer.observe(el);
+    const el = pageRefs.current.get(page);
+    if (el) {
+      el.scrollIntoView({ behavior: "instant", block: "start" });
     }
-    return () => observer.disconnect();
-  }, [totalPages, currentPage, onPageChange]);
+
+    observerEnabled.current = true;
+  }, [volume, totalPages]);
 
   useEffect(() => {
+    if (prevPageRef.current === currentPage) return;
+    prevPageRef.current = currentPage;
+
     const el = pageRefs.current.get(currentPage);
     const container = containerRef.current;
     if (!el || !container) return;
@@ -65,11 +60,49 @@ export function StripLayout({
 
     scrollingToPage.current = currentPage;
     el.scrollIntoView({ behavior: "smooth", block: "start" });
-    const timer = setTimeout(() => {
-      scrollingToPage.current = null;
-    }, 600);
-    return () => clearTimeout(timer);
+
+    const release = () => {
+      if (scrollingToPage.current === currentPage) {
+        scrollingToPage.current = null;
+      }
+    };
+
+    container.addEventListener("scrollend", release, { once: true });
+    const timer = setTimeout(release, 2000);
+    return () => {
+      container.removeEventListener("scrollend", release);
+      clearTimeout(timer);
+    };
   }, [currentPage]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!observerEnabled.current || scrollingToPage.current !== null) return;
+
+        let best: { page: number; ratio: number } | null = null;
+        for (const entry of entries) {
+          const page = Number((entry.target as HTMLElement).dataset.page);
+          if (!page || !entry.isIntersecting) continue;
+          if (!best || entry.intersectionRatio > best.ratio) {
+            best = { page, ratio: entry.intersectionRatio };
+          }
+        }
+        if (best && best.page !== currentPageRef.current) {
+          onPageChangeRef.current(best.page);
+        }
+      },
+      { root: container, threshold: [0.25, 0.5, 0.75] }
+    );
+
+    for (const el of pageRefs.current.values()) {
+      observer.observe(el);
+    }
+    return () => observer.disconnect();
+  }, [totalPages]);
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 

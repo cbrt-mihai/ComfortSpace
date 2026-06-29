@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { pageUrl } from "../../api";
 import type { FitMode } from "../../readerPreferences";
 
@@ -22,10 +22,23 @@ export function PageImage({
   eager = false,
 }: PageImageProps) {
   const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const onLoadRef = useRef(onLoad);
   const src = pageUrl(slug, volume, page);
+
+  onLoadRef.current = onLoad;
+
+  const markLoaded = () => {
+    setLoaded(true);
+    onLoadRef.current?.();
+  };
 
   useEffect(() => {
     setLoaded(false);
+    const img = imgRef.current;
+    if (img?.complete && img.naturalWidth > 0) {
+      markLoaded();
+    }
   }, [src]);
 
   const fitClass =
@@ -33,15 +46,13 @@ export function PageImage({
 
   return (
     <img
+      ref={imgRef}
       src={src}
       alt={`Page ${page}`}
       loading={eager ? "eager" : "lazy"}
       decoding="async"
       draggable={false}
-      onLoad={() => {
-        setLoaded(true);
-        onLoad?.();
-      }}
+      onLoad={markLoaded}
       className={`select-none ${fitClass} ${loaded ? "opacity-100" : "opacity-0"} transition-opacity ${className}`}
     />
   );

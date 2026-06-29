@@ -17,8 +17,11 @@ export function ReaderPage() {
     volume: string;
   }>();
   const [searchParams] = useSearchParams();
+  const urlPage = parseInt(searchParams.get("page") ?? "0", 10);
   const [volumeData, setVolumeData] = useState<VolumeDetail | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() =>
+    urlPage > 0 ? urlPage : 1
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -35,20 +38,29 @@ export function ReaderPage() {
       .catch((e) => setError(e.message));
   }, [slug, volumeNum]);
 
+  const fetchId = useRef(0);
+
   useEffect(() => {
     if (!slug) return;
+
+    const id = ++fetchId.current;
     setLoading(true);
+
     getVolume(slug, volumeNum)
       .then((data) => {
+        if (fetchId.current !== id) return;
         setVolumeData(data);
-        const urlPage = parseInt(searchParams.get("page") ?? "0", 10);
         const resumePage =
           urlPage > 0 ? urlPage : data.progress?.page ?? 1;
         setCurrentPage(Math.min(Math.max(resumePage, 1), data.totalPages));
       })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [slug, volumeNum, searchParams]);
+      .catch((e) => {
+        if (fetchId.current === id) setError(e.message);
+      })
+      .finally(() => {
+        if (fetchId.current === id) setLoading(false);
+      });
+  }, [slug, volumeNum, urlPage]);
 
   const persistProgress = useCallback(
     (page: number) => {
