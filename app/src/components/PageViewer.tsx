@@ -17,11 +17,13 @@ export type { FitMode };
 
 interface PageViewerProps {
   slug: string;
+  seriesId: string;
   volume: number;
   currentPage: number;
   totalPages: number;
   chapters: Chapter[];
   onPageChange: (page: number) => void;
+  onUserDataChange?: () => void;
 }
 
 function getCurrentChapter(chapters: Chapter[], page: number): Chapter | undefined {
@@ -30,11 +32,13 @@ function getCurrentChapter(chapters: Chapter[], page: number): Chapter | undefin
 
 export function PageViewer({
   slug,
+  seriesId,
   volume,
   currentPage,
   totalPages,
   chapters,
   onPageChange,
+  onUserDataChange,
 }: PageViewerProps) {
   const [preferences, setPreferences] = useState<ReaderPreferences>(loadReaderPreferences);
   const currentChapter = getCurrentChapter(chapters, currentPage);
@@ -94,6 +98,8 @@ export function PageViewer({
   return (
     <div className="flex flex-col h-[calc(100vh-65px)] bg-black">
       <ReaderToolbar
+        seriesId={seriesId}
+        volume={volume}
         currentPage={currentPage}
         totalPages={totalPages}
         currentChapter={currentChapter}
@@ -101,6 +107,7 @@ export function PageViewer({
         preferences={preferences}
         onChapterJump={onPageChange}
         onPreferencesChange={handlePreferencesChange}
+        onUserDataChange={onUserDataChange}
       />
 
       {preferences.layoutMode === "single" && <SinglePageLayout {...layoutProps} />}

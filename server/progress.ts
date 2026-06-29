@@ -1,5 +1,7 @@
 import fs from "node:fs/promises";
 import { LIBRARY_PATH } from "./paths.js";
+import { findSeries, findVolume, loadLibrary } from "./scanner.js";
+import { autoMarkRead } from "./userData.js";
 import type { Library, ProgressEntry } from "./types.js";
 
 export function progressKey(
@@ -19,8 +21,9 @@ export async function saveProgress(
   page: number,
   chapter?: number
 ): Promise<ProgressEntry> {
+  const library = await loadLibrary();
   const raw = await fs.readFile(LIBRARY_PATH, "utf-8");
-  const library = JSON.parse(raw) as Library;
+  const lib = JSON.parse(raw) as Library;
 
   const entry: ProgressEntry = {
     page,
@@ -28,12 +31,19 @@ export async function saveProgress(
     updatedAt: new Date().toISOString(),
   };
 
-  library.progress[progressKey(seriesId, volume)] = entry;
+  lib.progress[progressKey(seriesId, volume)] = entry;
   if (chapter !== undefined) {
-    library.progress[progressKey(seriesId, volume, chapter)] = entry;
+    lib.progress[progressKey(seriesId, volume, chapter)] = entry;
   }
 
-  await fs.writeFile(LIBRARY_PATH, JSON.stringify(library, null, 2));
+  await fs.writeFile(LIBRARY_PATH, JSON.stringify(lib, null, 2));
+
+  const series = findSeries(library, seriesId);
+  const vol = series ? findVolume(series, volume) : undefined;
+  if (vol && page >= vol.totalPages) {
+    await autoMarkRead(seriesId, volume, chapter);
+  }
+
   return entry;
 }
 

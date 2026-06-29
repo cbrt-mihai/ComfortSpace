@@ -22,6 +22,12 @@ export interface Series {
   description?: string;
   yearStart?: number;
   yearEnd?: number;
+  genres?: string[];
+  tags?: string[];
+  status?: "ongoing" | "completed" | "hiatus";
+  altTitles?: string[];
+  publisher?: string;
+  language?: string;
   coverPage: string;
   volumes: Volume[];
 }
@@ -32,10 +38,27 @@ export interface ProgressEntry {
   updatedAt: string;
 }
 
+export interface ReadEntry {
+  read: boolean;
+  readAt?: string;
+  updatedAt: string;
+}
+
+export interface RatingEntry {
+  score: number;
+  updatedAt: string;
+}
+
 export interface Library {
   scannedAt: string;
   series: Series[];
   progress: Record<string, ProgressEntry>;
+  readStatus: Record<string, ReadEntry>;
+  ratings: Record<string, RatingEntry>;
+}
+
+export interface ChapterOverride {
+  title?: string;
 }
 
 export interface SeriesMetadata {
@@ -44,4 +67,28 @@ export interface SeriesMetadata {
   description?: string;
   yearStart?: number;
   yearEnd?: number;
+  genres?: string[];
+  tags?: string[];
+  status?: "ongoing" | "completed" | "hiatus";
+  altTitles?: string[];
+  publisher?: string;
+  language?: string;
+  chapterOverrides?: Record<string, Record<string, ChapterOverride>>;
+}
+
+export interface ItemRatings {
+  manual?: number;
+  calculated?: number;
+  calculatedFromManualChildren?: number;
+}
+
+export interface ItemStats {
+  volumesRead?: number;
+  volumesTotal?: number;
+  chaptersRead: number;
+  chaptersTotal: number;
+  pagesRead: number;
+  pagesTotal: number;
+  percentComplete: number;
+  ratings?: ItemRatings;
 }
