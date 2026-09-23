@@ -18,7 +18,9 @@ function titleFromSlug(slug: string): string {
 }
 
 function parseVolumeNumber(filename: string): number | null {
-  const match = filename.match(/v(\d+)/i);
+  const match = filename.match(
+    /(?:^|[^a-zA-Z])(?:v|vol(?:ume)?)\s*\.?\s*[-_ ]?\s*0*(\d+)\b/i
+  );
   return match ? parseInt(match[1], 10) : null;
 }
 
@@ -26,7 +28,7 @@ function buildChapters(pages: { index: number; chapter: number }[]): Chapter[] {
   if (pages.length === 0) return [];
 
   const chapters: Chapter[] = [];
-  let currentChapter = pages[0].chapter || 1;
+  let currentChapter = pages.find((p) => p.chapter > 0)?.chapter || 1;
   let pageStart = pages[0].index;
 
   for (let i = 1; i <= pages.length; i++) {

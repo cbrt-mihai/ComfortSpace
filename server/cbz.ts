@@ -3,6 +3,7 @@ import path from "node:path";
 import { LRUCache } from "lru-cache";
 import yauzl from "yauzl";
 import type { Entry } from "yauzl";
+import { comparePageMeta, parsePageMeta } from "./pageMeta.js";
 
 const IMAGE_EXT = /\.(jpe?g|png|webp|gif)$/i;
 
@@ -10,16 +11,6 @@ export interface CbzPage {
   index: number;
   filename: string;
   chapter: number;
-}
-
-function pageSortKey(filename: string): number {
-  const match = filename.match(/p(\d+)(?:-p\d+)?/i);
-  return match ? parseInt(match[1], 10) : 9999;
-}
-
-function parseChapter(filename: string): number {
-  const match = filename.match(/c(\d+)/i);
-  return match ? parseInt(match[1], 10) : 0;
 }
 
 function openZip(cbzPath: string): Promise<yauzl.ZipFile> {
@@ -102,12 +93,16 @@ export async function listCbzPages(cbzPath: string): Promise<CbzPage[]> {
     const entries = await readAllEntries(zipfile);
     const images = entries
       .filter((e) => IMAGE_EXT.test(e.fileName))
-      .sort((a, b) => pageSortKey(a.fileName) - pageSortKey(b.fileName));
+      .map((entry) => ({ entry, meta: parsePageMeta(entry.fileName) }));
 
-    return images.map((entry, i) => ({
+    images.sort((a, b) =>
+      comparePageMeta(a.meta, b.meta, a.entry.fileName, b.entry.fileName)
+    );
+
+    return images.map((item, i) => ({
       index: i + 1,
-      filename: entry.fileName,
-      chapter: parseChapter(entry.fileName),
+      filename: item.entry.fileName,
+      chapter: item.meta.chapter,
     }));
   } finally {
     zipfile.close();
