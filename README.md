@@ -1,6 +1,6 @@
 # ComfortSpace
 
-A local-only web platform for browsing and reading your personal manga library. Point it at a folder of CBZ archives on your machine, open the app in your browser, and read — no cloud, no accounts, no database.
+A local-only web platform for browsing and reading your personal manga library. Point it at a folder of CBZ archives on your machine, open the app in your browser, and read. No cloud, no accounts, no database.
 
 ComfortSpace is the first piece of a broader personal media platform. Books and video are planned for later; manga is fully supported today.
 
@@ -8,17 +8,17 @@ ComfortSpace is the first piece of a broader personal media platform. Books and 
 
 ## Features
 
-- **Library browser** — grid of series with cover and title; stats and ratings appear after 1s hover
-- **Volume list** — per-series grid or expandable list view with chapter-level progress, read marks, and ratings
-- **Manga reader** — customizable layouts (single page, double page, long strip), zoom, fit-to-width/height, reading direction, and fullscreen
-- **Reading progress** — tracked at series, volume, and chapter level; automatically saved and restored
-- **Read marks** — auto-mark when finishing a volume; manual mark/unmark at any level; unmarking cascades to children (series → volumes → chapters, volume → chapters)
-- **Ratings** — 1–10 scores via 10-star picker (half steps) with numeric label; manual ratings at series/volume/chapter level plus calculated rollups
-- **Page navigation** — page counter with jump input, step buttons, and page selector (volumes ≤200 pages)
-- **Series metadata wizard** — in-app editor for `series.json` including chapter title overrides
-- **CBZ-native** — pages streamed directly from archives; no extraction to disk required
-- **Zero database** — catalog, progress, read status, and ratings stored in a single JSON cache file
-- **Filesystem-driven** — drop CBZ files into a folder, rescan, and they appear in the library
+- **Library browser** - grid of series with cover and title; stats and ratings appear after 1s hover
+- **Volume list** - per-series grid or expandable list view with chapter-level progress, read marks, and ratings
+- **Manga reader** - customizable layouts (single page, double page, long strip), zoom, fit-to-width/height, reading direction, and fullscreen
+- **Reading progress** - tracked at series, volume, and chapter level; automatically saved and restored
+- **Read marks** - auto-mark when finishing a volume; manual mark/unmark at any level; unmarking cascades to children (series → volumes → chapters, volume → chapters)
+- **Ratings** - 1–10 scores via 10-star picker (half steps) with numeric label; manual ratings at series/volume/chapter level plus calculated rollups
+- **Page navigation** - page counter with jump input, step buttons, and page selector (volumes ≤200 pages)
+- **Series metadata wizard** - in-app editor for `series.json` including chapter title overrides
+- **CBZ-native** - pages streamed directly from archives; no extraction to disk required
+- **Zero database** - catalog, progress, read status, and ratings stored in a single JSON cache file
+- **Filesystem-driven** - drop CBZ files into a folder, rescan, and they appear in the library
 
 ### Reader controls
 
@@ -31,7 +31,7 @@ ComfortSpace is the first piece of a broader personal media platform. Books and 
 | Jump to chapter | Chapter dropdown in the reader toolbar |
 | Mark read/unread | Read toggle in the reader toolbar |
 | Rate chapter | Star rating in the reader toolbar |
-| Layout mode | Layout dropdown — single page, double page, or long strip |
+| Layout mode | Layout dropdown - single page, double page, or long strip |
 | Fit mode | Fit height / Fit width (single and double page layouts) |
 | Reading direction | Right-to-left / Left-to-right (double page layout) |
 | Zoom | Slider, ± buttons, or editable percentage field (all layouts, 25%–200%) |
@@ -51,7 +51,7 @@ CBZ (Comic Book ZIP) is the recommended format for manga in ComfortSpace.
 | Double-page spreads | Supported as a single wide image | Not practical without manual mapping |
 | Ecosystem | Standard for manga readers (Komga, Kavita, etc.) | Better suited to books and documents |
 
-CBZ files are ZIP archives containing ordered image files. ComfortSpace reads pages on demand using [`yauzl`](https://github.com/thejoshwolfe/yauzl) — archives are never fully extracted to disk.
+CBZ files are ZIP archives containing ordered image files. ComfortSpace reads pages on demand using [`yauzl`](https://github.com/thejoshwolfe/yauzl) - archives are never fully extracted to disk.
 
 ---
 
@@ -82,7 +82,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 On first launch the server scans `data/manga/` and writes a catalog to `.cache/library.json`.
 
-**After cloning**, copy your own `.cbz` files into `data/manga/<series-slug>/` — archives are gitignored and are not pushed to GitHub.
+**After cloning**, copy your own `.cbz` files into `data/manga/<series-slug>/` - archives are gitignored and are not pushed to GitHub.
 
 ---
 
@@ -101,9 +101,9 @@ data/manga/
 
 ### Naming conventions
 
-- **Folder name** — becomes the series slug (e.g. `delicious-in-dungeon` → `/series/delicious-in-dungeon`)
-- **Volume files** — must contain a volume number matching `v01`, `v02`, etc. (e.g. `v01.cbz`, `v12.cbz`)
-- **CBZ contents** — image files inside the archive; chapter and page order are parsed from filenames when present
+- **Folder name** - becomes the series slug (e.g. `delicious-in-dungeon` → `/series/delicious-in-dungeon`)
+- **Volume files** - must contain a volume number matching `v01`, `v02`, etc. (e.g. `v01.cbz`, `v12.cbz`)
+- **CBZ contents** - image files inside the archive; chapter and page order are parsed from filenames when present
 
 Example internal CBZ filename (used for chapter detection):
 
@@ -208,7 +208,7 @@ Local filesystem
     └── .cache/library.json
 ```
 
-The browser cannot read arbitrary local files, so a small Node.js server acts as the bridge between your filesystem and the web UI. Everything runs on `localhost` — nothing is sent to the internet.
+The browser cannot read arbitrary local files, so a small Node.js server acts as the bridge between your filesystem and the web UI. Everything runs on `localhost` - nothing is sent to the internet.
 
 ### Catalog cache (`.cache/library.json`)
 
@@ -259,7 +259,7 @@ Ratings are stored as manual scores at each level. The API also returns **calcul
 | Volume | `manual`, `calculated` | Your volume rating; `calculated` = average of rated chapters |
 | Series | `manual`, `calculated`, `calculatedFromManualChildren` | Your series rating; `calculated` = average of volume calculated scores; `calculatedFromManualChildren` = average of manual volume ratings |
 
-On the series page all three series scores are always shown (empty stars and `—` when no score yet). Volume cards show your rating plus a calculated score from chapters.
+On the series page all three series scores are always shown (empty stars and `-` when no score yet). Volume cards show your rating plus a calculated score from chapters.
 
 ---
 
@@ -353,9 +353,9 @@ In production you will need to serve `app/dist/` separately (e.g. with a static 
 
 ComfortSpace is designed to grow into a unified local media platform:
 
-- [x] Manga — CBZ library, volume/chapter reader, progress tracking, read marks, ratings, metadata wizard
-- [ ] Books — EPUB/PDF support
-- [ ] Video — TV series and movies
+- [x] Manga - CBZ library, volume/chapter reader, progress tracking, read marks, ratings, metadata wizard
+- [ ] Books - EPUB/PDF support
+- [ ] Video - TV series and movies
 - [ ] OPDS catalog sharing
 - [ ] Full-text search
 
@@ -394,4 +394,4 @@ ComfortSpace is entirely local. Your files stay on your machine. No telemetry, n
 
 ## License
 
-This project does not include a license file. Manga files you add to `data/manga/` are your own responsibility — only add content you have the right to possess and use.
+This project does not include a license file. Manga files you add to `data/manga/` are your own responsibility - only add content you have the right to possess and use.
