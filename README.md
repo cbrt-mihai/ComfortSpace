@@ -24,8 +24,8 @@ ComfortSpace is the first piece of a broader personal media platform. Books and 
 
 | Action | Control |
 |--------|---------|
-| Next page | `→` or click the right half of the page |
-| Previous page | `←` or click the left half of the page |
+| Next page | Right arrow key `→` or click the right half of the page |
+| Previous page | Left arrow key `←` or click the left half of the page |
 | Fullscreen | `f` |
 | Jump to page | Page input, ± buttons, or page dropdown (≤200 pages) |
 | Jump to chapter | Chapter dropdown in the reader toolbar |
